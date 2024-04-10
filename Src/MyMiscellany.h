@@ -340,25 +340,16 @@ class FileBackedReadWriteStream
 public:
 	struct FileDescription
 	{
-		FILE *fp;
-		char fileName[2048];
+		FILE *fp = nullptr;
 
-		FileDescription( void ) : fp(NULL) { fileName[0] = 0; }
-		FileDescription( const FileDescription &fd ) : fp(fd.fp) { strcpy( fileName , fd.fileName ); }
-		FileDescription( FILE *fp ) : fp(fp) { fileName[0] = 0; }
-		FileDescription( const char *fileHeader ) : fp(NULL)
+		FileDescription(void) {}
+		FileDescription( const FileDescription &fd ) : fp(fd.fp) {}
+		FileDescription( FILE *fp ) : fp(fp) {}
+		FileDescription( const char *fileHeader )
 		{
-			if( fileHeader && strlen(fileHeader) ) sprintf( fileName , "%sXXXXXX" , fileHeader );
-			else strcpy( fileName , "XXXXXX" );
-#ifdef _WIN32
-			_mktemp( fileName );
-			fp = fopen( fileName , "w+b" );
-#else // !_WIN32
-			fp = fdopen( mkstemp( fileName ) , "w+b" );
-#endif // _WIN32
-			if( !fp ) ERROR_OUT( "Failed to open file: " , fileName );
+			fp = std::tmpfile();
 		}
-		void remove( void ){ if( fp ){ fclose( fp ) ; fp = NULL ; std::remove( fileName ); } }
+		void remove(void) { if (fp) { fclose(fp); fp = nullptr; } }
 	};
 
 	FileBackedReadWriteStream( const char* fileHeader="" ) : _fd( fileHeader ) , _fileHandleOwner(true) {}
