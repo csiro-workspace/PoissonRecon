@@ -230,7 +230,7 @@ protected:
 	unsigned int _depth;
 	std::string _str;
 };
-unsigned int FunctionCallNotifier::_Depth = 0;
+inline unsigned int FunctionCallNotifier::_Depth = 0;
 #define FUNCTION_NOTIFY FunctionCallNotifier ___myFunctionCallNotifier___( __FUNCTION__ )
 
 #include <signal.h>
@@ -243,7 +243,7 @@ unsigned int FunctionCallNotifier::_Depth = 0;
 #endif // WINDOWS
 struct StackTracer
 {
-	static const char *exec;
+	inline static const char *exec = nullptr;
 #if defined(_WIN32) || defined( _WIN64 )
 	static void Trace( void )
 	{
@@ -318,7 +318,6 @@ struct StackTracer
 	}
 #endif // WINDOWS
 };
-const char *StackTracer::exec;
 
 inline void SignalHandler( int signal )
 {
@@ -390,17 +389,23 @@ struct ThreadPool
 		ASYNC ,
 		NONE
 	};
-	static const std::vector< std::string > ParallelNames;
+    static inline const std::vector< std::string > ParallelNames = {
+#ifdef _OPENMP
+    "open mp" ,
+#endif // _OPENMP
+    "thread pool" ,
+    "async" ,
+    "none"
+    };
 
 	enum ScheduleType
 	{
 		STATIC ,
 		DYNAMIC
 	};
-	static const std::vector< std::string > ScheduleNames;
-
-	static size_t DefaultChunkSize;
-	static ScheduleType DefaultSchedule;
+	static inline const std::vector< std::string > ScheduleNames = { "static" , "dynamic" };
+	static inline size_t DefaultChunkSize = 128;
+	static inline ScheduleType DefaultSchedule = ThreadPool::DYNAMIC;
 
 	template< typename ... Functions >
 	static void ParallelSections( const Functions & ... functions )
@@ -546,36 +551,14 @@ private:
 		}
 	}
 
-	static bool _Close;
-	static volatile unsigned int _RemainingTasks;
-	static std::mutex _Mutex;
-	static std::condition_variable _WaitingForWorkOrClose , _DoneWithWork;
-	static std::vector< std::thread > _Threads;
-	static std::function< void ( unsigned int ) > _ThreadFunction;
-	static ParallelType _ParallelType;
+	static inline bool _Close;
+	static inline volatile unsigned int _RemainingTasks;
+	static inline std::mutex _Mutex;
+	static inline std::condition_variable _WaitingForWorkOrClose , _DoneWithWork;
+	static inline std::vector< std::thread > _Threads;
+	static inline std::function< void ( unsigned int ) > _ThreadFunction;
+	static inline ParallelType _ParallelType;
 };
-
-size_t ThreadPool::DefaultChunkSize = 128;
-ThreadPool::ScheduleType ThreadPool::DefaultSchedule = ThreadPool::DYNAMIC;
-bool ThreadPool::_Close;
-volatile unsigned int ThreadPool::_RemainingTasks;
-std::mutex ThreadPool::_Mutex;
-std::condition_variable ThreadPool::_WaitingForWorkOrClose;
-std::condition_variable ThreadPool::_DoneWithWork;
-std::vector< std::thread > ThreadPool::_Threads;
-std::function< void ( unsigned int ) > ThreadPool::_ThreadFunction;
-ThreadPool::ParallelType ThreadPool::_ParallelType;
-
-const std::vector< std::string >ThreadPool::ParallelNames =
-{
-#ifdef _OPENMP
-	"open mp" ,
-#endif // _OPENMP
-	"thread pool" ,
-	"async" ,
-	"none"
-};
-const std::vector< std::string >ThreadPool::ScheduleNames = { "static" , "dynamic" };
 
 #include <mutex>
 
